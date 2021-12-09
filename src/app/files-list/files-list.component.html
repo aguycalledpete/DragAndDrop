@@ -1,0 +1,18 @@
+<div class="files-list">
+    <ng-container *ngFor="let storedFile of files; let i = index">
+        <div class="single-file" *ngIf="storedFile">
+            <div class="info">
+                <h4 class="name">
+                    {{ storedFile?.File?.name }}
+                </h4>
+                <p class="size">
+                    {{ getFormattedFileSize(storedFile?.File?.size) }}
+                </p>
+                <ng-content></ng-content>
+            </div>
+            <div class="delete" (click)="deleteFile(i)">
+                <span>delete</span>
+            </div>
+        </div>
+    </ng-container>
+</div>

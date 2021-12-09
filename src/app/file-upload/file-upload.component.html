@@ -1,0 +1,13 @@
+<div class="container" appDragAndDrop (onFileDropped)="fileDroppedHandler($event)">
+    <input type="file" #fileDropRef id="fileDropRef" (change)="fileBrowseHandler($event)" />
+    <h3>Drag and drop file here</h3>
+    <h3>or</h3>
+    <label for="fileDropRef">Browse for file</label>
+</div>
+
+<app-files-list [files]="[fileBeingStored]" (fileDeleted)="fileDeletedHandler()">
+    <ng-template #fileProgress></ng-template>
+    <h4 class="name">
+        {{progress}}%
+    </h4>
+</app-files-list>
