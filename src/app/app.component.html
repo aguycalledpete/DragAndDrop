@@ -1,8 +1,9 @@
 <app-file-upload (fileUploaded)="fileUploadedHandler($event)"></app-file-upload>
+
 <app-files-list [files]="storedFiles" (fileDeleted)="fileDeletedHandler($event)">
-  <ng-template #fileProgress></ng-template>
-  
-  <h4 class="name">
-    File Ready
-  </h4>
+  <ng-container fileProgress>
+    <h4 class="name">
+      File Ready
+    </h4>
+  </ng-container>
 </app-files-list>

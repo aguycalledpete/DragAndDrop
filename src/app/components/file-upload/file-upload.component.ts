@@ -1,12 +1,8 @@
 import { Component, EventEmitter, Output } from '@angular/core';
 import { Observable, Observer, of, switchMap } from 'rxjs';
-import { FileDto } from '../dtos/file.dto';
-
-const FILE_NOT_FOUND = 'File not found';
-const INVALID_FILE = 'Invalid file';
-const INVALID_IMAGE = 'Invalid Image';
-const INVALID_SIZE = 'Invalid Size';
-const MAX_FILE_KBYTES = 100000;
+import { ConstantsService } from '../../services/constants/constants.service';
+import { FileDto } from '../../dtos/file.dto';
+import { FileService } from 'src/app/services/file/file.service';
 
 @Component({
   selector: 'app-file-upload',
@@ -19,8 +15,10 @@ export class FileUploadComponent {
   fileBeingStored: FileDto;
   progress: number;
 
-  readonly progressSimulationDelay = 300;
-  readonly progressSimulationInterval = 300;
+  constructor(
+    private constants: ConstantsService,
+    private fileService: FileService
+  ) { }
 
   fileDroppedHandler(file: File) {
     this.storeFile(file);
@@ -44,8 +42,7 @@ export class FileUploadComponent {
   }
 
   fileDeletedHandler() {
-    this.fileBeingStored = null;
-    this.progress = 0;
+    this.reset();
   }
 
   private storeFile(file: File) {
@@ -57,17 +54,17 @@ export class FileUploadComponent {
     of(this.fileBeingStored).pipe(
       switchMap(() => this.validateFile(file))
     )
-      .subscribe((validatedFile: FileDto) => {
-        this.fileBeingStored = null;
-        this.progress = 100;
-        this.fileUploaded.emit(validatedFile);
-      });
+      .subscribe({
+        next: (validatedFile: FileDto) => this.fileUploaded.emit(validatedFile),
+        error: (invalidFile: FileDto) => alert(invalidFile.ErrorMessage),
+        complete: () => this.reset()
+      })
   }
 
   private validateFile(fileToValidate: File): Observable<FileDto> {
     if (!fileToValidate) {
       return new Observable((observer: Observer<FileDto>) => {
-        observer.error({ ErrorMessage: ` File name = ${name} | ${FILE_NOT_FOUND}.` });
+        observer.error({ ErrorMessage: `File name = ${name} | ${this.constants.FILE_NOT_FOUND}` });
       });
     }
 
@@ -76,7 +73,9 @@ export class FileUploadComponent {
 
     return new Observable((observer: Observer<FileDto>) => {
       if (!this.isValidSize(size)) {
-        observer.error({ ErrorMessage: ` File name = ${name} | ${INVALID_SIZE}. | Size = ${size} bytes` });
+        this.reset();
+        observer.error({ ErrorMessage: `File name = ${name} | ${this.constants.INVALID_SIZE} | Size = ${this.fileService.getFormattedFileSize(size)}` });
+        return;
       }
 
       fileReader.readAsDataURL(fileToValidate);
@@ -89,7 +88,7 @@ export class FileUploadComponent {
           };
 
           image.onerror = () => {
-            observer.error({ ErrorMessage: ` File name = ${name} | ${INVALID_IMAGE}.` });
+            observer.error({ ErrorMessage: `File name = ${name} | ${this.constants.INVALID_IMAGE}` });
           };
 
           image.src = fileReader.result as string;
@@ -109,7 +108,7 @@ export class FileUploadComponent {
       };
 
       fileReader.onerror = () => {
-        observer.error({ ErrorMessage: ` File name = ${name} | ${INVALID_FILE}.` });
+        observer.error({ ErrorMessage: `File name = ${name} | ${this.constants.INVALID_FILE}` });
       };
 
     });
@@ -117,11 +116,16 @@ export class FileUploadComponent {
 
   private isValidSize(size: number): boolean {
     const toKByte = size / 1000;
-    return toKByte >= 5 && toKByte <= MAX_FILE_KBYTES;
+    return toKByte >= 5 && toKByte <= this.constants.MAX_FILE_KBYTES;
   }
 
   private isImage(mimeType: string): boolean {
     return mimeType.match(/image\/*/) !== null;
+  }
+
+  private reset() {
+    this.fileBeingStored = null;
+    this.progress = 0;
   }
 
 }
