@@ -55,16 +55,21 @@ export class FileUploadComponent {
       switchMap(() => this.validateFile(file))
     )
       .subscribe({
-        next: (validatedFile: FileDto) => this.fileUploaded.emit(validatedFile),
-        error: (invalidFile: FileDto) => alert(invalidFile.ErrorMessage),
-        complete: () => this.reset()
+        next: (validatedFile: FileDto) => {
+          this.fileUploaded.emit(validatedFile);
+          this.reset();
+        },
+        error: (invalidFile: FileDto) => {
+          alert(invalidFile.ErrorMessage);
+          this.reset();
+        }
       })
   }
 
   private validateFile(fileToValidate: File): Observable<FileDto> {
     if (!fileToValidate) {
       return new Observable((observer: Observer<FileDto>) => {
-        observer.error({ ErrorMessage: `File name = ${name} | ${this.constants.FILE_NOT_FOUND}` });
+        observer.error({ ErrorMessage: `${this.constants.FILE_NOT_FOUND}| File name = ${name}` });
       });
     }
 
@@ -74,7 +79,7 @@ export class FileUploadComponent {
     return new Observable((observer: Observer<FileDto>) => {
       if (!this.isValidSize(size)) {
         this.reset();
-        observer.error({ ErrorMessage: `File name = ${name} | ${this.constants.INVALID_SIZE} | Size = ${this.fileService.getFormattedFileSize(size)}` });
+        observer.error({ ErrorMessage: `${this.constants.INVALID_SIZE} ${this.fileService.getFormattedFileSize(size)} | File name = ${name}` });
         return;
       }
 
@@ -88,15 +93,14 @@ export class FileUploadComponent {
           };
 
           image.onerror = () => {
-            observer.error({ ErrorMessage: `File name = ${name} | ${this.constants.INVALID_IMAGE}` });
+            observer.error({ ErrorMessage: `${this.constants.INVALID_IMAGE} | File name = ${name}` });
           };
 
           image.src = fileReader.result as string;
           return;
         }
 
-        observer.next({ File: fileToValidate });
-        observer.complete();
+        observer.error({ ErrorMessage: `${this.constants.INVALID_FILE_NOT_IMAGE} | File name = ${name}` });
       };
 
       fileReader.onprogress = (event) => {
@@ -108,7 +112,7 @@ export class FileUploadComponent {
       };
 
       fileReader.onerror = () => {
-        observer.error({ ErrorMessage: `File name = ${name} | ${this.constants.INVALID_FILE}` });
+        observer.error({ ErrorMessage: `${this.constants.INVALID_FILE} | File name = ${name}` });
       };
 
     });
